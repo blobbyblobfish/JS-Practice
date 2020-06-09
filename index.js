@@ -194,7 +194,6 @@ document.addEventListener("DOMContentLoaded", () => {
         
         //View cast
         else if (e.target.textContent === "View Cast" && e.target.dataset.status === "closed") {
-
             if (e.target.dataset.category === "horror") {
                 const castUl = document.createElement("ul")
                 castUl.dataset.class = "cast-ul"
