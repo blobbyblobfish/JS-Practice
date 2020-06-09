@@ -3,8 +3,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     //Render movies
     const horror = document.getElementById("horror")
+    const horrorMovies = []
     const comedy = document.getElementById("comedy")
+    const comedyMovies = []
     const action = document.getElementById("action")
+    const actionMovies = []
 
     function fetchHorror() {
         fetch("http://localhost:4000/horror")
@@ -37,6 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderHorrorMovie(movie){
+        horrorMovies.push(movie)
+
         const id = movie.id || null
         const cover = `${movie.cover}`
         
@@ -49,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h4>Duration: ${movie["duration-in-hours"]} hours</h4> 
         <img src=${cover} data-id=${id}>
         <hr>
-        <button>View Cast</button>
+        <button data-category="horror" data-status="closed" data-id=${id}>View Cast</button>
         <button data-category="horror" data-id=${id}>Delete Movie</button>
         <hr>
         `
@@ -57,6 +62,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderComedyMovie(movie){
+        comedyMovies.push(movie)
+
         const id = movie.id || null
         const cover = `${movie.cover}`
         
@@ -69,7 +76,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h4>Duration: ${movie["duration-in-hours"]} hours</h4>
         <img src=${cover} data-id=${id}>
         <hr>
-        <button>View Cast</button>
+        <button data-category="comedy" data-status="closed" data-id=${id}>View Cast</button>
         <button data-category="comedy" data-id=${id}>Delete Movie</button>
         <hr>
         `
@@ -77,6 +84,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function renderActionMovie(movie){
+        actionMovies.push(movie)
+
         const id = movie.id || null
         const cover = `${movie.cover}`
         
@@ -89,7 +98,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <h4>Duration: ${movie["duration-in-hours"]} hours</h4>
         <img src=${cover} data-id=${id}>
         <hr>
-        <button data-id=${movie.id}>View Cast</button>
+        <button data-category="action" data-status="closed" data-id=${id}>View Cast</button>
         <button data-category="action" data-id=${id}>Delete Movie</button>
         <hr>
         `
@@ -102,15 +111,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     //Dropdown menu
     function removeHorrorMovies(){
-        horror.innerHTML = ``
+        horror.innerHTML = `<h2>Horror Movies:</h2>`
     }
 
     function removeComedyMovies(){
-        comedy.innerHTML = ``
+        comedy.innerHTML = `<h2>Comedy Movies:</h2>`
     }
 
     function removeActionMovies(){
-        action.innerHTML = ``
+        action.innerHTML = `<h2>Action Movies:</h2>`
     }
 
     document.addEventListener("change", (e) => {
@@ -153,14 +162,15 @@ document.addEventListener("DOMContentLoaded", () => {
             addMovieForm.innerHTML = `
             <hr>
             <label>Title</label><br>
-            <input type="text" name="title"></input><br>
+            <input type="text" name="title" placeholder="e.g. 'Stardust'"></input><br>
             <label>Duration (in hours)</label><br>
-            <input type="text" name="duration"></input><br>
+            <input type="text" name="duration" placeholder="2.2 hours"></input><br>
             <label>Cover</label><br>
-            <input type="text" name="cover"></input><br>
+            <input type="text" name="cover" placeholder="http://..."></input><br>
             <label>Cast</label><br>
-            <input type="text" name="cast"></input><br>
-            <label>Category</label><br>
+            <input type="text" name="cast" placeholder="Name"></input><br>
+            <input type="text" name="character" placeholder="Character"></input><br>
+            <br><label>Category</label><br>
             <select name="category">
                 <option value="horror">Horror</option>
                 <option value="comedy">Comedy</option>
@@ -173,18 +183,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     document.addEventListener("click", (e) => {
-        if (e.target.dataset.status === "closed") {
+        if (e.target.textContent === "Add Movie" && e.target.dataset.status === "closed") {
             e.target.dataset.status = "opened"
             createMovieForm()
         }
-        else if (e.target.dataset.status === "opened") {
+        else if (e.target.textContent === "Add Movie" && e.target.dataset.status === "opened") {
             e.target.dataset.status = "closed"
             toolsDiv.removeChild(toolsDiv.lastChild)
         }
         
         //View cast
-        else if (e.target.textContent === "View Cast") {
-            console.log("view cast")
+        else if (e.target.textContent === "View Cast" && e.target.dataset.status === "closed") {
+
+            if (e.target.dataset.category === "horror") {
+                const castUl = document.createElement("ul")
+                castUl.dataset.class = "cast-ul"
+                castUl.innerHTML = renderCast(horrorMovies[e.target.dataset.id - 1])
+                e.target.parentNode.append(castUl)
+            }
+
+            else if (e.target.dataset.category === "comedy") {
+                const castUl = document.createElement("ul")
+                castUl.dataset.class = "cast-ul"
+                castUl.innerHTML = renderCast(comedyMovies[e.target.dataset.id - 1])
+                e.target.parentNode.append(castUl)
+            }
+
+            else if (e.target.dataset.category === "action") {
+                const castUl = document.createElement("ul")
+                castUl.dataset.class = "cast-ul"
+                castUl.innerHTML = renderCast(actionMovies[e.target.dataset.id - 1])
+                e.target.parentNode.append(castUl)
+            }   
         }
 
         //Delete movie (optimistically)
@@ -208,7 +238,6 @@ document.addEventListener("DOMContentLoaded", () => {
         //Add additional cast
         
     })
-
 
     //Add movie (optimistically)
     document.addEventListener("submit", (e) => {
@@ -270,6 +299,22 @@ document.addEventListener("DOMContentLoaded", () => {
 
         }
     })
+
+    //View cast
+    function fetchAndRenderCast(category, movieId) {
+        fetch(`http://localhost:4000/${category}/${movieId}`)
+        .then(resp => resp.json())
+        .then(json => renderCast(json))
+    }
+
+    function renderCast(movie) {
+        const innerHTML = []
+        for (actor in movie.cast) {
+            innerHTML.push(`<li>${movie.cast[actor].name} as ${movie.cast[actor].character}</li>`)
+        }
+        
+        return innerHTML.join(" ")
+    }
 
 
 })
